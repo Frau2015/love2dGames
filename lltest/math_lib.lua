@@ -25,8 +25,8 @@ function getTangents(p1,r1,p2,r2)
 				local ny = vy * c + sign2 * h * vx;
 				result[i] = {};
 				local a = result[i]
-				a[1] = {x=(p1.x + r1 * nx), y=(p1.y + r1 * ny)};
-				a[2] = {x=(p2.x + sign1 * r2 * nx), y=(p2.y + sign1 * r2 * ny)};
+				a[0] = {x=(p1.x + r1 * nx), y=(p1.y + r1 * ny)};
+				a[1] = {x=(p2.x + sign1 * r2 * nx), y=(p2.y + sign1 * r2 * ny)};
 				i = i + 1
 			end
 		end

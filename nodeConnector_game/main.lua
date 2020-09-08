@@ -1,10 +1,21 @@
 require 'game'
+require 'levels'
+require 'game_objs'
 function love.load()
 	love.graphics.setBackgroundColor(1,1,1)
 	screenW = love.graphics.getWidth()
 	screenH = love.graphics.getHeight()
 	gfx = love.graphics
-	game = game:new()
+	levels = {
+		level1 = {
+			startNode = {250,100,1},
+			endNode = {600,400,20},
+			spools = {{300,200,30},{400,300,50},{400,210,20}}
+		}
+	}
+	game = game:new() 
+	-- print(game.spools)
+	game:load(levels.level1)
 end
 function printCord(name,pos)
 	print(name .. ' x:' .. pos.x .. ' y:' .. pos.y )

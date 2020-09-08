@@ -1,4 +1,4 @@
-require 'game_objs'
+require 'cable'
 require 'math_lib'
 local shapelib = require('rigidShapes')
 
@@ -8,7 +8,6 @@ spoolSystem = class('spoolSystem')
 function spoolSystem:init(spools,cables)
     self.spools = spools
 	self.cables = cables
-	self.numofAttached = 0
 end
 function spoolSystem:getAngle()
 	return angle
@@ -50,33 +49,36 @@ function updateCableTangents(cables)
 		if tangents[idx] then
 			a.outPos = tangents[idx][1]
 			b.inPos = tangents[idx][2]
-			--print('updated value ' .. i)
+			print('updated value ' .. i)
 		else
-			--print('could not set value')
+			print('could not set value')
 		end
 	end
 end
 function getIntersected(outPos,inPos,ignoreA,ignoreB,spools)
-	-- local possibleSpools = {}
 	for _, spool in pairs(spools) do
-		if spool.type == 'node' and spool ~= ignoreA and spool ~= ignoreB and lineCircleIntersect(outPos,inPos,spool) and (not spool.isAttached)then
+		--local tangents = getTangents(inPos,ignoreB.rad,spool,spool.rad)
+		if spool ~= ignoreA and spool ~= ignoreB and lineCircleIntersect(outPos,inPos,spool) and (not spool.isAttached)then
 			if distSqr(spool,ignoreA) > (spool.rad+ignoreA.rad)^2 and distSqr(spool,ignoreB) > (spool.rad + ignoreB.rad)^2 then
+		--if spool ~= ignoreA and spool ~= ignoreB and (not spool.isAttached) and lineCircleIntersect(outPos,inPos,spool) then
+			--if #tangents == 4 then
 				return spool
-				-- table.insert(possibleSpool,spool)
 			end
 		end
 	end
 	return nil
-	-- return possibleSpools[1]
 end
 -- don't insert if there is not tangents
 function createSuitableAttachments(spools,cables)
+
 	for i=1,#cables-1 do
 		local a = cables[i]
 		local b = cables[i+1]
 		local spl = getIntersected(a.outPos,b.inPos,a.spool,b.spool,spools)
+		-- print('..')
 		if spl then
-			-- print('inserted ' .. i)
+			print('inserted ' .. i)
+			--print(spl)
 			spl.isAttached = true
 			local side = whichSide(a.outPos,spl,b.inPos)
 			local newCable = cable:new(spl,side)
@@ -91,63 +93,21 @@ function removeDisconnected(spools,cables)
 		local lastspool = cables[#cables-1].spool 
 		local lastcable = cables[#cables-1]
 		for i, spool in pairs(spools) do
+			-- print(spool == lastspool)
 			if spool == lastspool then 
 				if (lastcable.side == 'left' and angle > 320) or (lastcable.side == 'right' and angle < 20) then
+					-- print(lastcable.side)
 					spools[i].isAttached = false
 					table.remove(cables,#cables-1)
 				end
+				-- print(angle)
 			end
 		end
 	end
-end
-function spoolSystem:getNumofAttached()
-	return self.numofAttached
 end
 function spoolSystem:update()
 	updateCableTangents(self.cables)
 	createSuitableAttachments(self.spools,self.cables)
 	removeDisconnected(self.spools,self.cables)
-	local attachedCount = 0
-	local endNode = nil
-	for _, cable in pairs(self.cables) do
-		cable.overlapped = false
-	end
-	for _, spool in pairs(self.spools) do 
-		if spool.isAttached  then 
-			attachedCount = attachedCount + 1 
-		end
-		if spool.type == 'endNode' then 
-			-- print('found endnode')
-			endNode = spool 
-		end
-	end
-	-- print(attachedCount)
-	self.numofAttached = attachedCount
-	local anyOverlapped = false
-	for i=1,#self.cables-1 do
-		local a = self.cables[i]
-		local b = self.cables[i+1]
-		for j=1,#self.cables-1 do
-			local a2 = self.cables[j]
-			local b2 = self.cables[j+1]
-			if lineLineIntersect(a.outPos,b.inPos,a2.outPos,b2.inPos) then
-				a2.overlapped = true
-				b2.overlapped = true
-				anyOverlapped = true
-			end
-		end
-	end
-	-- print(string.format('pointer cord x: %d y:%d ',self.pointer.x,self.pointer.y))
-	local pointer = self.cables[#self.cables].spool
-	if endNode then
-		if distSqr(pointer,endNode) <= endNode.rad^2 then
-			pointer.x = endNode.x
-			pointer.y = endNode.y
-			attachedCount = attachedCount + 1
-		end
-	end
-	-- if (not anyOverlapped) and attachedCount == #self.spools then
-	-- 	print('game is won')
-	-- end
 end
 return spoolSystem
